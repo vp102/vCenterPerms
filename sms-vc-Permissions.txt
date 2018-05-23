@@ -1,0 +1,52 @@
+# This script applies $awsRole privilage to members of the $awsGroup for VMs defined in ServerList.txt
+# Input Origin Specific Values Below
+# Allow working with multiple vCenters.
+Set-PowerCLIConfiguration -DefaultVIServerMode multiple -Scope Session -InvalidCertificateAction Ignore -Confirm:$False
+
+$vCenter1 = "auszogesrweh001.auprod.originenergy.com.au"
+$vCenter2 = "auulogesrweh001.originenergy.com.au"
+#Connect to vCenter Servers.
+Connect-VIServer $vCenter1
+Connect-VIServer $vCenter2
+
+# awsGroup should be the AD group containing the SMS service account.
+$awsGroup = "OCN\APP-AWS-SMS-G"
+
+# awsRole should be the name of the vCenter role which has been created and configured as per AWS documentation.
+$awsRole = "AWS-SMS-ROLE"
+
+# Put a text file called ServerList.txt with the names of the servers in scope in the same directory as this script.
+# Get a list of in-sope servers.
+$ServerList = Get-Content .\ServerList.txt
+
+
+# For Each server in the ServerList.txt File:
+forEach ($Server in $ServerList) {
+
+# Check that the VM Exists in vCenter
+$VmExists = Get-VM -Name $Server -ErrorAction SilentlyContinue
+
+
+#If the VM Exist in vCenter
+If ($VmExists) {
+
+    # Set the required permission on the VM Object.
+    Write-Host "Setting VM permissions for " $Server
+    Get-VM -Name $Server | New-ViPermission -Role (Get-ViRole -Name $awsRole) -Principal $awsGroup
+
+    # Set the required permission on the datastores which the VM resodes.
+    Write-Host "Setting Datastore permissions for " $Server
+    Get-VM -Name $Server | Get-Datastore | New-ViPermission -Role (Get-ViRole -Name $awsRole) -Principal $awsGroup
+
+    # Set the required permission on the hosts in the cluster where the VM could run.
+    Write-Host "Setting Host permissions for " $Server
+    Get-VM -Name $Server | Get-Cluster | Get-VmHost | New-ViPermission -Role (Get-ViRole -Name $awsRole) -Principal $awsGroup
+
+}
+
+#If the VM doesn't exist in vCenter.
+Else {
+    Write-Host $Server "- Does Not Exist"
+    }
+
+}

@@ -1,0 +1,19 @@
+# This script removes the $awsRole anywhere it exists when the $awsGroup has been assigned the permission.
+# Input Origin Specific Values Below.
+# Allow working with multiple vCenters.
+Set-PowerCLIConfiguration -DefaultVIServerMode multiple -Scope Session -InvalidCertificateAction Ignore -Confirm:$False
+
+$vCenter1 = "auszogesrweh001.auprod.originenergy.com.au"
+$vCenter2 = "auulogesrweh001.originenergy.com.au"
+#Connect to vCenter Servers.
+Connect-VIServer $vCenter1
+Connect-VIServer $vCenter2
+
+# awsGroup should be the AD group containing the SMS service account.
+$awsGroup = "OCN\APP-AWS-SMS-G"
+
+# awsRole should be the name of the vCenter role which has been created and configured as per AWS documentation.
+$awsRole = "AWS-SMS-ROLE"
+
+# Remove-Role
+Get-ViPermission -Principal $awsGroup | Where {$_.Role -eq $awsRole} | Remove-ViPermission -Confirm:$False
