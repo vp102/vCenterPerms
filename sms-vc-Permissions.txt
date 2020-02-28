@@ -1,5 +1,5 @@
 # This script applies $awsRole privilage to members of the $awsGroup for VMs defined in ServerList.txt
-# Input Origin Specific Values Below
+# Input Environment Specific Values Below
 # Allow working with multiple vCenters.
 Set-PowerCLIConfiguration -DefaultVIServerMode multiple -Scope Session -InvalidCertificateAction Ignore -Confirm:$False
 
